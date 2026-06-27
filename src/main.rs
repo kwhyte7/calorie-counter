@@ -126,7 +126,7 @@ async fn main() {
             println!("TOTAL CALORIES: {}\nOver the last {} days", calories, days)
         }
         Commands::Rm { id } => {
-            let meal = sqlx::query_as::<_, MealEntry>("SELECT * WHERE id = ?1")
+            let meal = sqlx::query_as::<_, MealEntry>("SELECT * FROM meals WHERE id = ?1")
                 .bind(id)
                 .fetch_optional(&pool)
                 .await
