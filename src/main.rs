@@ -1,4 +1,4 @@
-use std::{fmt::Display, path::Path};
+use std::{fmt::Display, path::Path, time::Duration};
 
 use clap::{Parser, Subcommand};
 use sqlx::{
@@ -15,10 +15,21 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[clap(alias = "d")]
     Day,
-    Add { calories: u32, comment: String },
-    Prev { days: u32 },
-    Rm { id: u32 },
+    #[clap(alias = "a")]
+    Add {
+        calories: u32,
+        comment: String,
+    },
+    #[clap(alias = "p")]
+    Prev {
+        days: u64,
+    },
+    #[clap(alias = "rm")]
+    Remove {
+        id: u32,
+    },
     All,
 }
 
@@ -45,19 +56,19 @@ impl<'r> FromRow<'r, SqliteRow> for MealEntry {
             id: row.get("id"),
             name: row.get("name"),
             calories: row.get("calories"),
-            created_at: row.get("created_at"), // fails?
+            created_at: row.get("created_at"),
         })
     }
 }
 
-async fn query_days_ago(days: u32, pool: &SqlitePool) -> (Vec<MealEntry>, u32) {
-    let meals = sqlx::query_as::<_, MealEntry>(
-        "select * from meals where created_at >= datetime('now', 'localtime', 'start of day');",
-    )
-    .bind(days)
-    .fetch_all(pool)
-    .await
-    .expect("Failed to query meals");
+async fn query_days_ago(days: u64, pool: &SqlitePool) -> (Vec<MealEntry>, u32) {
+    let start_of_day =
+        Local::now().date_naive().and_hms_opt(0, 0, 0).unwrap() - Duration::from_hours(24 * days);
+    let meals = sqlx::query_as::<_, MealEntry>("select * from meals where created_at >= ?1")
+        .bind(start_of_day)
+        .fetch_all(pool)
+        .await
+        .expect("Failed to query meals");
 
     let total_calories = meals.iter().fold(0_u32, |mut acc, meal| {
         acc += meal.calories;
@@ -103,7 +114,7 @@ async fn main() {
 
     match cli.command {
         Commands::Day => {
-            let (meals, calories) = query_days_ago(1, &pool).await;
+            let (meals, calories) = query_days_ago(0, &pool).await;
             for meal in meals {
                 println!("{meal}\n=======================")
             }
@@ -111,7 +122,7 @@ async fn main() {
         }
         Commands::Add { calories, comment } => {
             sqlx::query("INSERT INTO meals (name, calories) VALUES (?1, ?2)")
-                .bind(comment)
+                .bind(comment.trim())
                 .bind(calories)
                 .execute(&pool)
                 .await
@@ -123,9 +134,14 @@ async fn main() {
             for meal in meals {
                 println!("{meal}\n=======================")
             }
-            println!("TOTAL CALORIES: {}\nOver the last {} days", calories, days)
+            println!(
+                "TOTAL CALORIES: {} over the last {} days, averaging {:02} calories per day",
+                calories,
+                days,
+                calories as f32 / days as f32
+            )
         }
-        Commands::Rm { id } => {
+        Commands::Remove { id } => {
             let meal = sqlx::query_as::<_, MealEntry>("SELECT * FROM meals WHERE id = ?1")
                 .bind(id)
                 .fetch_optional(&pool)
