@@ -52,7 +52,7 @@ impl<'r> FromRow<'r, SqliteRow> for MealEntry {
 
 async fn query_days_ago(days: u32, pool: &SqlitePool) -> (Vec<MealEntry>, u32) {
     let meals = sqlx::query_as::<_, MealEntry>(
-        "select * from meals where created_at >= datetime('now', '-1 days', 'start of day');",
+        "select * from meals where created_at >= datetime('now', 'localtime', 'start of day');",
     )
     .bind(days)
     .fetch_all(pool)
