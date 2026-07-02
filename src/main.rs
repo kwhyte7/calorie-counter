@@ -138,7 +138,7 @@ async fn main() {
                 "TOTAL CALORIES: {} over the last {} days, averaging {:02} calories per day",
                 calories,
                 days,
-                calories as f32 / days as f32
+                calories as f32 / (days as f32 + 1_f32)
             )
         }
         Commands::Remove { id } => {
