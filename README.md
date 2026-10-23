@@ -8,14 +8,14 @@ calorie-counter -h
 to see all commands
 
 ```
-Usage: calorie-counter <COMMAND>                  
+Usage: calorie-counter <COMMAND>
 
 Commands:
-  day
-  add
-  prev
-  remove
-  all
+  day     See how many calories you've eaten today
+  add     <calories> <comment> Add new listing to the database
+  prev    <days> See how many previous days of calories
+  remove  <id> Remove a listing by id
+  all     See everything
   help    Print this message or the help of the given subcommand(s)
 
 Options:

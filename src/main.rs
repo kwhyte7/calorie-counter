@@ -15,21 +15,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// See how many calories you've eaten today
     #[clap(alias = "d")]
     Day,
+    /// <calories> <comment> Add new listing to the database
     #[clap(alias = "a")]
-    Add {
-        calories: u32,
-        comment: String,
-    },
+    Add { calories: u32, comment: String },
+    /// <days> See how many previous days of calories
     #[clap(alias = "p")]
-    Prev {
-        days: u64,
-    },
+    Prev { days: u64 },
+    /// <id> Remove a listing by id
     #[clap(alias = "rm")]
-    Remove {
-        id: u32,
-    },
+    Remove { id: u32 },
+    /// See everything
     All,
 }
 
